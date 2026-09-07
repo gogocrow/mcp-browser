@@ -1,0 +1,12 @@
+import { defineConfig } from 'tsdown';
+
+export default defineConfig({
+  entry: ['src/index.ts', 'src/cli.ts'],
+  format: ['esm'],
+  dts: false,
+  clean: true,
+  outputOptions: { entryFileNames: '[name].js' },
+  target: 'node22',
+  platform: 'node',
+  sourcemap: true,
+});

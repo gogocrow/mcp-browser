@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <title>Browser MCP Bridge</title>
+    <style>
+      body {
+        width: 280px;
+        margin: 0;
+        padding: 12px;
+        font: 13px/1.5 system-ui, sans-serif;
+      }
+      h1 {
+        margin: 0 0 8px;
+        font-size: 14px;
+      }
+      .row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 10px;
+      }
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #999;
+      }
+      .dot[data-state='connected'] {
+        background: #22c55e;
+      }
+      .dot[data-state='connecting'] {
+        background: #eab308;
+      }
+      .dot[data-state='disconnected'] {
+        background: #ef4444;
+      }
+      label {
+        display: block;
+        margin-bottom: 8px;
+        color: #555;
+      }
+      input {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 4px 6px;
+        font: inherit;
+      }
+      button {
+        width: 100%;
+        padding: 6px;
+        font: inherit;
+        cursor: pointer;
+      }
+      details {
+        margin-top: 10px;
+        color: #555;
+      }
+      summary {
+        cursor: pointer;
+      }
+      pre {
+        max-height: 220px;
+        overflow: auto;
+        background: #f6f6f6;
+        padding: 6px;
+        font-size: 11px;
+        line-height: 1.35;
+        white-space: pre-wrap;
+        user-select: all;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Browser MCP Bridge</h1>
+    <div class="row"><span class="dot" id="dot"></span><span id="state">读取中…</span></div>
+    <label>服务地址<input id="url" type="text" placeholder="ws://127.0.0.1:8777/bridge" /></label>
+    <label>令牌（可选）<input id="token" type="password" placeholder="留空表示不鉴权" /></label>
+    <button id="save" type="button">保存并重连</button>
+    <details>
+      <summary>诊断日志（点开可全选复制）</summary>
+      <pre id="log">读取中…</pre>
+    </details>
+    <script type="module" src="./popup.js"></script>
+  </body>
+</html>

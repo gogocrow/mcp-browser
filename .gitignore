@@ -1,0 +1,12 @@
+node_modules/
+dist/
+*.tsbuildinfo
+
+# 包管理器统一 pnpm，其他 lockfile 一旦生成就是漂移源
+package-lock.json
+yarn.lock
+
+.env
+.env.local
+*.log
+.DS_Store

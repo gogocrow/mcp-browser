@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "Browser MCP Bridge",
+  "version": "0.1.0",
+  "description": "把浏览器标签页的操作能力通过 WebSocket 桥接给本地 MCP 服务",
+  "minimum_chrome_version": "116",
+  "permissions": ["tabs", "scripting", "storage", "alarms", "debugger"],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Browser MCP Bridge"
+  }
+}

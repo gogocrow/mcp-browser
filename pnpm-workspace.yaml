@@ -1,0 +1,15 @@
+packages:
+  - packages/*
+
+# 三个包共用的工具链版本集中在这里，避免各包各写一份漂移
+catalog:
+  '@biomejs/biome': ^2.5.12
+  '@types/chrome': ^0.2.8
+  '@types/node': ^26.4.1
+  '@types/ws': ^8.18.1
+  '@modelcontextprotocol/sdk': ^1.30.0
+  tsdown: ^0.23.0
+  typescript: ^7.0.2
+  vitest: ^5.0.0
+  ws: ^8.21.3
+  zod: ^4.5.4
