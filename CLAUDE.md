@@ -48,9 +48,11 @@ claude mcp add --transport http browser http://127.0.0.1:8777/mcp
 claude mcp add --transport http browser http://127.0.0.1:8777/mcp --header "Authorization: Bearer <token>"
 ```
 
+Codex CLI / Qoder CLI / Qoder IDE 的接法写在 `README.md` 的「不用 `bx`，直接接 MCP」一节 —— 加新客户端时改那里，别在这里再抄一份。
+
 ## 对外入口：`bx` 命令行 + `browser` skill
 
-日常使用走全局命令 `bx`（`packages/server/src/cli.ts`），而**不是**把 MCP 注册给 Claude Code。原因是注册 MCP 会把 13 个工具的 schema（实测 12,577 字符 ≈ 5k token）常驻上下文；skill 只在触发时加载，`bx --help` 按需取。
+日常使用走全局命令 `bx`（`packages/server/src/cli.ts`），而**不是**把 MCP 注册给 Claude Code。原因是注册 MCP 会把 17 个工具的 schema 常驻上下文（实测 name + description + inputSchema 共 7,606 字符，客户端若展开 outputSchema 约 17k 字符）；skill 只在触发时加载，`bx --help` 按需取。
 
 CLI 是个瘦客户端，**内部仍然打守护进程的 `/mcp` 端点** —— 上下文开销来自"注册给模型"，不是传输协议本身，所以没必要为了 CLI 另造一套协议。MCP 端点因此也顺带保留给别的客户端用。
 
