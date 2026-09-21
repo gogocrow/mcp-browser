@@ -141,6 +141,16 @@ cd packages/server && pnpm link --global   # 装成全局 bx
 
 **参数的默认值必须让省钱的那一边是 `false`。** 现在是 `includeStructure`（默认 `false` = 只给可操作元素 = 最省），而不是反过来的 `interactiveOnly`。LLM 倾向于不传可选参数，所以默认值直接决定实际开销；参数名的极性写反，等于让每次调用都走贵的那条路。同理，**工具描述里要写清具体体积**（"约 9000 字符""开了会翻倍"），模型才有依据决定要不要加参数——只写"更省"它无法判断值不值。
 
+## 网络监听
+
+`extension/src/background/network.ts`。`net start` → 触发操作 → `net list` 拿 requestId → `net body <id>` 取正文 → `net stop`。
+
+- **CDP 事件是推送，而本项目协议是请求-应答**，所以事件收进每标签页的环形缓冲区（上限 1000 条），由 `network.list` 轮询取走。**不要为了网络监听给协议加一种推送消息** —— 轮询模型同样契合 CLI 的用法。
+- **`requestWillBeSent` 只内联 `maxPostDataSize`（64KB）以内的请求体**，超出的 `postData` 是 null，必须再调一次 `Network.getRequestPostData`。实测 100KB 的 POST 原本完全拿不到，大 body 接口调试就是瞎的。
+- **请求体和响应体都必须截断。** 曾经只给响应体做了分页保护，请求体整个返回 —— 一次文件上传就能把调用方上下文冲垮。同一个接口里两种待遇是设计漏洞。
+- **响应体是浏览器临时保留的**，导航或缓冲区淘汰后 `Network.getResponseBody` 就会失败，这不是 bug；此时摘要信息仍在缓冲区里可查。
+- 录制前发生的请求抓不到 —— **必须先 start 再触发操作**。
+
 ## 审计日志
 
 每次浏览器操作都会追加一条 JSONL 到磁盘（默认 `~/.browser-mcp/audit.jsonl`，`BRIDGE_AUDIT_FILE` 可改，`BRIDGE_AUDIT=off` 关闭），记录时间、动作、目标标签页、参数、成败、错误码、耗时和一句话结果摘要。用 `history_query` 工具查（支持按标签页、时间、只看失败过滤）。文件是逐行 JSON，也可以直接 `grep` / `jq`。

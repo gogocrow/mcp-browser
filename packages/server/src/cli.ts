@@ -425,6 +425,7 @@ async function main(): Promise<void> {
           status: number | null;
           mimeType: string | null;
           postData: string | null;
+          postDataTotalChars: number;
           chunk: string;
           totalChars: number;
           offset: number;
@@ -432,7 +433,14 @@ async function main(): Promise<void> {
         };
         emit(r, (v: typeof r) => {
           const head = `${v.method} ${v.status ?? '-'} ${v.mimeType ?? ''}\n${v.url}`;
-          const post = v.postData ? `\n--- 请求体 ---\n${v.postData}` : '';
+          let post = '';
+          if (v.postData) {
+            const cut =
+              v.postDataTotalChars > v.postData.length
+                ? `（已截断 / 共 ${v.postDataTotalChars} 字符）`
+                : '';
+            post = `\n--- 请求体 ${cut}---\n${v.postData}`;
+          }
           return `${head}${post}\n--- 响应体 (${v.offset}..${v.offset + v.chunk.length} / ${v.totalChars}) ---\n${v.chunk}`;
         });
         if (r.truncated) {

@@ -12,6 +12,8 @@ export interface NetEntry {
   durationMs: number | null;
   failed: string | null;
   postData: string | null;
+  /** 请求确实带了体，但可能因超过 maxPostDataSize 而没内联进事件 */
+  hasPostData: boolean;
   requestHeaders: Record<string, string> | null;
   responseHeaders: Record<string, string> | null;
   startedAt: number;
@@ -54,7 +56,13 @@ chrome.debugger.onEvent.addListener((source, method, params) => {
 
   if (method === 'Network.requestWillBeSent') {
     const request = payload.request as
-      | { method?: string; url?: string; postData?: string; headers?: Record<string, string> }
+      | {
+          method?: string;
+          url?: string;
+          postData?: string;
+          hasPostData?: boolean;
+          headers?: Record<string, string>;
+        }
       | undefined;
     const buffer = bufferFor(tabId);
     buffer.push({
@@ -68,6 +76,7 @@ chrome.debugger.onEvent.addListener((source, method, params) => {
       durationMs: null,
       failed: null,
       postData: request?.postData ?? null,
+      hasPostData: request?.hasPostData === true || typeof request?.postData === 'string',
       requestHeaders: request?.headers ?? null,
       responseHeaders: null,
       startedAt: Date.now(),
@@ -187,6 +196,25 @@ export async function getBody(
     );
   }
 
+  // requestWillBeSent 只内联 maxPostDataSize 以内的请求体（实测 100KB 的 POST 就拿不到），
+  // 超出的要单独取一次。这条不能省，否则大 body 的接口调试就是瞎的。
+  let postData = entry.postData;
+  if (postData === null && entry.hasPostData) {
+    try {
+      const r = await send<{ postData?: string }>(tabId, 'Network.getRequestPostData', {
+        requestId,
+      });
+      postData = r.postData ?? null;
+    } catch {
+      postData = null; // 浏览器已释放，只能作罢
+    }
+  }
+
+  // 请求体同样要截断。响应体有分页保护而请求体没有的话，一次文件上传就能把调用方的
+  // 上下文冲垮 —— 同一个接口里两种待遇是设计漏洞。
+  const postDataTotalChars = postData?.length ?? 0;
+  if (postData !== null && postData.length > maxChars) postData = postData.slice(0, maxChars);
+
   let body = '';
   let base64Encoded = false;
   try {
@@ -213,7 +241,8 @@ export async function getBody(
     url: entry.url,
     status: entry.status,
     mimeType: entry.mimeType,
-    postData: entry.postData,
+    postData,
+    postDataTotalChars,
     requestHeaders: includeHeaders ? entry.requestHeaders : null,
     responseHeaders: includeHeaders ? entry.responseHeaders : null,
     base64Encoded,
