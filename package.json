@@ -9,6 +9,7 @@
   "scripts": {
     "build": "pnpm -r build",
     "dev": "pnpm --filter @browser-mcp/shared build && pnpm --filter @browser-mcp/server dev",
+    "autostart": "node packages/server/scripts/autostart.ts",
     "typecheck": "pnpm -r typecheck",
     "test": "vitest run",
     "test:watch": "vitest",
