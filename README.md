@@ -111,11 +111,45 @@ bx status
 等这么久是因为插件此时多半正处在重连退避中（退避上限 30 秒）。实测等 9 秒不够，
 会误报「插件未连接」。
 
+自动启动由 `bx` 实现，AI 按 browser skill 调用 `bx tabs`、`bx status` 等操作命令即可触发，
+无需额外执行启动命令；`bx --help`、`bx daemon status` 不会启动服务，直接访问 MCP 地址也不会。
+后台进程通过 `detached: true`、`stdio: 'ignore'` 和 `unref()` 脱离调用进程，
+通常不会随 `bx` 或 Agent 退出而结束。但如果 Agent 运行环境主动清理它启动的进程，
+服务仍可能被终止。需要独立于 Agent 的长期运行和退出后自动恢复时，使用下面的方式 C，
+由 macOS launchd 启动并管理服务。
+
 **方式 B：自己起服务**
 
 ```bash
 pnpm --filter @browser-mcp/server start
 ```
+
+**方式 C：macOS 登录自启**
+
+在仓库根目录运行，无需 `sudo`：
+
+```bash
+pnpm build
+pnpm autostart install --dry-run   # 可选：预览路径并校验配置，不修改系统
+pnpm autostart install             # 安装登录自启并立即启动
+pnpm autostart status              # 查看安装和进程状态
+pnpm autostart uninstall           # 停止服务并取消自启，保留日志
+```
+
+脚本自动识别当前用户、Node 可执行文件和仓库绝对路径，路径含空格也可使用。
+配置写入 `~/Library/LaunchAgents/local.browser-mcp.plist`，日志在
+`~/.browser-mcp/launchd.stdout.log` 和 `~/.browser-mcp/launchd.stderr.log`。
+这是用户登录后启动；Chrome 打开且插件启用后会自动连接。
+
+如果端口已被 `bx` 自动启动的守护进程占用，先运行 `bx daemon stop`，再安装。
+自启安装后进程由 launchd 保活；需要停用时用 `pnpm autostart uninstall`，
+单独执行 `bx daemon stop` 会被自动拉起。卸载自启后，普通 `bx` 命令仍可按需启动服务。
+
+安装时会保存当前 shell 中项目支持的 `BRIDGE_*` 环境变量，配置文件权限为 `0600`；
+不会复制整个 shell 环境。再次安装保留未提供的旧设置，显式传空值可清除，例如
+`BRIDGE_TOKEN= pnpm autostart install`。自定义端口或令牌时，插件和调用方也需要匹配。
+移动仓库或切换 Node 版本后，重新运行 `pnpm autostart install` 更新路径；
+安装失败时会尝试恢复旧配置。
 
 **确认连上了**：徽标变成绿色 `ON`，或者
 
